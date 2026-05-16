@@ -7,8 +7,8 @@
 struct Tensors_info{
     std::string name;
     uint32_t dim_num;
-    std::vector<uint64_t> dims;
-    DataType type;
+    std::vector<uint64_t> dimensions;
+    DataType dtype;
     uint64_t off_set;
     bool transpose = false;
 };
@@ -19,12 +19,19 @@ struct gguf_info {
     uint64_t kv_count;
     Json::Value meta_data;
     std::vector<Tensors_info> tensors_info;
+    uint32_t off_set;
+    void print_info();
 };
 
 class GGUFParser {
 public:
-    GGUFParser(const std::filesystem::path& path);
+    explicit GGUFParser(const std::filesystem::path& path);
     ~GGUFParser();
+    GGUFParser(const GGUFParser&) = delete;
+    GGUFParser& operator=(const GGUFParser&) = delete;
+    GGUFParser(GGUFParser&&) = delete;
+    GGUFParser& operator=(GGUFParser&&) = delete;
+    gguf_info& get_info() { return info_; }
 private:
     void parser();
     void read_meta_data();

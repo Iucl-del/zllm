@@ -17,19 +17,19 @@ uint64_t align_to(uint64_t offset, uint64_t alignment) {
 
 GGUFParser::GGUFParser(const std::filesystem::path& path) {
     if (!std::filesystem::exists(path)) {
-        std::print("gguf file does not exist, path: {}\n", path.string());
+        std::println("gguf file does not exist, path: {}", path.string());
         return;
     }
 
     file_.open(path, std::ios::in | std::ios::binary);
     if (!file_.is_open()) {
-        std::print("failed to open gguf file, path: {}\n", path.string());
+        std::println("failed to open gguf file, path: {}", path.string());
         return;
     }
 
     char name[4] {};
     if (!file_.read(name, 4) || std::strncmp(name, "GGUF", 4) != 0) {
-        std::print("invalid gguf file: magic mismatch\n");
+        std::println("invalid gguf file: magic mismatch");
         return;
     }
 
@@ -44,16 +44,16 @@ void GGUFParser::parser() {
     if (!read_binary(file_, info_.version) ||
         !read_binary(file_, info_.tensor_count) ||
         !read_binary(file_, info_.kv_count)) {
-        std::print("failed to read gguf header\n");
+        std::println("failed to read gguf header");
         return;
     }
 
     if (info_.version != 3) {
-        std::print("unsupported gguf version: {}\n", info_.version);
+        std::println("unsupported gguf version: {}", info_.version);
         return;
     }
     if (!info_.kv_count) {
-        std::print("kv_count is zero\n");
+        std::println("kv_count is zero");
         return;
     }
 
@@ -85,7 +85,7 @@ void GGUFParser::read_meta_data()
 
         Json::Value value;
         if (!read_metadata_value(type, value)) {
-            std::print("metadata value read failed: {}\n", name);
+            std::println("metadata value read failed: {}", name);
             return;
         }
 
@@ -197,7 +197,7 @@ bool GGUFParser::read_metadata_value(gguf_metadata_value_type type, Json::Value&
 void GGUFParser::read_tensors_info()
 {
     if (!info_.tensor_count) {
-        std::print("tensor_count is zero\n");
+        std::println("tensor_count is zero");
         return;
     }
 
@@ -218,17 +218,17 @@ void GGUFParser::read_tensors_info()
             return;
         }
         if (tensors_info.dim_num < 1 || tensors_info.dim_num > 2) {
-            std::print("only 1D or 2D tensors are supported now\n");
+            std::println("only 1D or 2D tensors are supported now");
             return;
         }
 
-        tensors_info.dims.resize(tensors_info.dim_num, 0);
+        tensors_info.dimensions.resize(tensors_info.dim_num, 0);
         for (size_t n = 0; n < tensors_info.dim_num; ++n) {
-            if (!read_binary(file_, tensors_info.dims[tensors_info.dim_num - n - 1])) {
+            if (!read_binary(file_, tensors_info.dimensions[tensors_info.dim_num - n - 1])) {
                 return;
             }
         }
-        if (!read_binary(file_, tensors_info.type)) {
+        if (!read_binary(file_, tensors_info.dtype)) {
             return;
         }
         if (!read_binary(file_, tensors_info.off_set)) {
@@ -238,4 +238,30 @@ void GGUFParser::read_tensors_info()
         info_.tensors_info.emplace_back(std::move(tensors_info));
         len = 0;
     }
+}
+
+void gguf_info::print_info()
+{
+    auto get_meta_string = [this](const std::string_view key) -> std::string
+    {
+        if (meta_data.isMember(key.data()) && meta_data[key.data()].isString()) {
+            return meta_data[key.data()].asString();
+        }
+        return "unknown";
+    };
+    std::println("{:-<14}GGUF 文件信息{:-<14}", "", "");
+    std::println("gguf version:             {}", version);
+    std::println("model arch:               {}", get_meta_string("general.architecture"));
+    std::println("model name:               {}", get_meta_string("general.name"));
+    std::println("kv_count:                 {}", kv_count);
+    std::println("tensor_count:             {}", tensor_count);
+    std::println("data_offset:              {}", off_set);
+    std::println("{:-<26} {:-<8} {:-<14}", "", "", "");
+    std::println("{:<26} {:<8} {}", "名称", "数据类型", "维度");
+    std::println("{:-<26} {:-<8} {:-<14}", "", "", "");
+    for (const auto& info : tensors_info) {
+        // std::println("(\"{}\",\"{}\",{}),", info.name, data_type_to_string(info.dtype), info.dimensions);
+        std::println("{:<26} {:<8} {}", info.name, data_type_to_string(info.dtype), info.dimensions);
+    }
+    std::println("{:-<26} {:-<8} {:-<14}", "", "", "");
 }
