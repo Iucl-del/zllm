@@ -20,7 +20,9 @@ struct gguf_info {
     Json::Value meta_data;
     std::vector<Tensors_info> tensors_info;
     uint32_t off_set;
+
     void print_info();
+    std::string get_model_architecture();
 };
 
 class GGUFParser {

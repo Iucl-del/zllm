@@ -15,7 +15,10 @@ set_target_properties(jsoncpp PROPERTIES
 )
 
 add_executable(zllm main.cpp
-        src/gguf_parser.cpp)
+        src/gguf_parser.cpp
+        src/qwen3.cpp
+        src/model.cpp
+        src/graph.cpp)
 
 target_include_directories(zllm
         PRIVATE

@@ -1,5 +1,6 @@
 #include "gguf_parser.hpp"
 #include "global.hpp"
+#include "tensor.hpp"
 
 template<typename T>
 requires std::is_trivially_copyable_v<T>
@@ -217,8 +218,8 @@ void GGUFParser::read_tensors_info()
         if (!read_binary(file_, tensors_info.dim_num)) {
             return;
         }
-        if (tensors_info.dim_num < 1 || tensors_info.dim_num > 2) {
-            std::println("only 1D or 2D tensors are supported now");
+        if (tensors_info.dim_num < 1 || tensors_info.dim_num > TENSOR_MAX_DIMS) {
+            std::println("unsupported tensor dim count: {}", tensors_info.dim_num);
             return;
         }
 
@@ -228,9 +229,11 @@ void GGUFParser::read_tensors_info()
                 return;
             }
         }
-        if (!read_binary(file_, tensors_info.dtype)) {
+        uint32_t dtype{};
+        if (!read_binary(file_, dtype)) {
             return;
         }
+        tensors_info.dtype = static_cast<DataType>(dtype);
         if (!read_binary(file_, tensors_info.off_set)) {
             return;
         }
@@ -264,4 +267,12 @@ void gguf_info::print_info()
         std::println("{:<26} {:<8} {}", info.name, data_type_to_string(info.dtype), info.dimensions);
     }
     std::println("{:-<26} {:-<8} {:-<14}", "", "", "");
+}
+
+std::string gguf_info::get_model_architecture()
+{
+    if (meta_data.isMember("general.architecture") && meta_data["general.architecture"].isString()) {
+        return meta_data["general.architecture"].asString();
+    }
+    return "unknown";
 }

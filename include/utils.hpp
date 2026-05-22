@@ -1,4 +1,7 @@
 #pragma once
+#include <cstddef>
+#include <cstdint>
+#include <string>
 
 enum class DataType:uint8_t {
     GGML_TYPE_F32     = 0,
@@ -36,6 +39,38 @@ enum class DataType:uint8_t {
     GGML_TYPE_COUNT   = 40
 };
 
+enum class Device:uint8_t {
+    CPU,
+    CUDA,
+    SYCL,
+    VULKAN,
+    UNKNOWN
+};
+
+enum class TensorType:uint8_t {
+    TENSOR_TYPE_UNKNOWN,
+    TENSOR_TYPE_INPUT,
+    TENSOR_TYPE_WEIGHT,
+    TENSOR_TYPE_ACTIVATION,
+    TENSOR_TYPE_OUTPUT,
+    TENSOR_TYPE_CACHE,
+    TENSOR_TYPE_VIEW
+};
+
+enum class OperationType:uint8_t {
+    OP_TYPE_NONE,
+    OP_TYPE_EMBEDDING,
+    OP_TYPE_RMS_NORM,
+    OP_TYPE_MATMUL,
+    OP_TYPE_ADD,
+    OP_TYPE_MUL,
+    OP_TYPE_ROPE,
+    OP_TYPE_ATTENTION,
+    OP_TYPE_SILU,
+    OP_TYPE_OUTPUT,
+    OP_TYPE_MEMCPY
+};
+
 enum gguf_metadata_value_type : uint32_t {
     GGUF_METADATA_VALUE_TYPE_UINT8 = 0,
     GGUF_METADATA_VALUE_TYPE_INT8 = 1,
@@ -50,6 +85,20 @@ enum gguf_metadata_value_type : uint32_t {
     GGUF_METADATA_VALUE_TYPE_UINT64 = 10,
     GGUF_METADATA_VALUE_TYPE_INT64 = 11,
     GGUF_METADATA_VALUE_TYPE_FLOAT64 = 12,
+};
+
+enum class ModelType:uint8_t {
+    UNKNOWN,
+    CAUSAL_LM,      // 因果语言模型
+    EMBEDDING,      // 嵌入模型
+    SEQ2SEQ,        // 序列到序列
+    CLASSIFIER,     // 分类器
+};
+
+enum class ModelArch:uint8_t{
+    UNKNOWN,
+    QWEN3,
+    QWEN35
 };
 
 inline std::string data_type_to_string(DataType dtype) {
@@ -88,5 +137,35 @@ inline std::string data_type_to_string(DataType dtype) {
         case DataType::GGML_TYPE_MXFP4:   return "MXFP4";
         case DataType::GGML_TYPE_COUNT:   return "COUNT";
         default:                          return "Unknown";
+    }
+}
+
+inline size_t data_type_size(DataType dtype) {
+    switch (dtype) {
+        case DataType::GGML_TYPE_F32: return 4;
+        case DataType::GGML_TYPE_F16: return 2;
+        case DataType::GGML_TYPE_BF16: return 2;
+        case DataType::GGML_TYPE_I8: return 1;
+        case DataType::GGML_TYPE_I16: return 2;
+        case DataType::GGML_TYPE_I32: return 4;
+        case DataType::GGML_TYPE_I64: return 8;
+        case DataType::GGML_TYPE_F64: return 8;
+        default: return 0;
+    }
+}
+
+inline std::string operation_type_to_string(OperationType op) {
+    switch (op) {
+        case OperationType::OP_TYPE_NONE: return "NONE";
+        case OperationType::OP_TYPE_EMBEDDING: return "EMBEDDING";
+        case OperationType::OP_TYPE_RMS_NORM: return "RMS_NORM";
+        case OperationType::OP_TYPE_MATMUL: return "MATMUL";
+        case OperationType::OP_TYPE_ADD: return "ADD";
+        case OperationType::OP_TYPE_MUL: return "MUL";
+        case OperationType::OP_TYPE_ROPE: return "ROPE";
+        case OperationType::OP_TYPE_ATTENTION: return "ATTENTION";
+        case OperationType::OP_TYPE_SILU: return "SILU";
+        case OperationType::OP_TYPE_OUTPUT: return "OUTPUT";
+        default: return "UNKNOWN";
     }
 }
